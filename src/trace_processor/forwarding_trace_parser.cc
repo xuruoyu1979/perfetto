@@ -57,6 +57,7 @@ std::optional<TraceSorter::SortingMode> GetMinimumSortingMode(
     case kSystraceTraceType:
     case kGzipTraceType:
     case kCtraceTraceType:
+    case kWvrTraceType:
       return std::nullopt;
 
     case kPerfDataTraceType:

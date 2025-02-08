@@ -66,6 +66,7 @@
 #include "src/trace_processor/importers/json/json_trace_tokenizer.h"
 #include "src/trace_processor/importers/json/json_utils.h"
 #include "src/trace_processor/importers/ninja/ninja_log_parser.h"
+#include "src/trace_processor/importers/wvr/wvr_parser.h"
 #include "src/trace_processor/importers/perf/perf_data_tokenizer.h"
 #include "src/trace_processor/importers/perf/perf_tracker.h"
 #include "src/trace_processor/importers/perf/record_parser.h"
@@ -424,6 +425,8 @@ TraceProcessorImpl::TraceProcessorImpl(const Config& cfg)
       kSystraceTraceType);
   context_.reader_registry->RegisterTraceReader<NinjaLogParser>(
       kNinjaLogTraceType);
+  context_.reader_registry->RegisterTraceReader<WvrParser>(
+      kWvrTraceType);
 
   context_.reader_registry
       ->RegisterTraceReader<perf_importer::PerfDataTokenizer>(

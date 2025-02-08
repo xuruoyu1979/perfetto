@@ -1,0 +1,12 @@
+source_set("full") {
+  sources = [
+    "wvr_parser.cc",
+    "wvr_parser.h",
+  ]
+  deps = [
+    "../../../../gn:default_deps",
+    "../../importers/common",
+    "../../sorter",
+    "../../storage",
+  ]
+}
