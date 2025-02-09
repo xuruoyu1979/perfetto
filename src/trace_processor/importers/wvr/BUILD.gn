@@ -2,6 +2,17 @@ source_set("full") {
   sources = [
     "wvr_parser.cc",
     "wvr_parser.h",
+    "tinyxml2.cc",
+    "tinyxml2.h",
+    "defXML.h",
+    "Event.h",
+    "EventDescription.h",
+    "EventParam.h",
+    "Param.h",
+    "xmlLib.cc",
+    "xmlLib.h",
+    "wvrLib.cc",
+    "wvrLib.h",
   ]
   deps = [
     "../../../../gn:default_deps",
