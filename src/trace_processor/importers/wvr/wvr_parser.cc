@@ -30,8 +30,8 @@
 #include "perfetto/ext/base/string_view.h"
 #include "perfetto/trace_processor/trace_blob_view.h"
 #include "src/trace_processor/importers/common/cpu_tracker.h"
-#include "src/trace_processor/importers/common/sched_event_tracker.h"
 #include "src/trace_processor/importers/common/process_tracker.h"
+#include "src/trace_processor/importers/common/sched_event_tracker.h"
 #include "src/trace_processor/importers/common/slice_tracker.h"
 #include "src/trace_processor/importers/common/track_tracker.h"
 #include "src/trace_processor/storage/stats.h"
@@ -65,22 +65,26 @@ base::Status WvrParser::Parse(TraceBlobView blob) {
 
   vector<Event> eventCache;
 
-  bool isFirstTick = true;
   int16_t currentCpuId = 0;
-  int64_t currentTicks = 0;
-  int64_t firstTicks = 0;
-  // int64_t prevTicks = 0;
+  int64_t lastTimeStamp = 0;
+  int64_t m_prevTicks = 0;
+
+  int32_t timestampFreq = 0;
+  int32_t timestampPeriod = 0;
+  int32_t autoRollover = 0;
+  int32_t clkRate = 0;
 
   while (reader.parseEvent(src)) {
     Event event = reader.getCurrentEvent();
     int64_t ticks = event.getTicks();
-    if (ticks != 0 && isFirstTick) {
-      firstTicks = ticks;
-      isFirstTick = false;
+    // determine whether the timer has rolled round
+    if (ticks > m_prevTicks) {
+      lastTimeStamp = lastTimeStamp + (ticks - m_prevTicks);
+    } else {
+      lastTimeStamp = lastTimeStamp + ticks + timestampPeriod - m_prevTicks;
     }
-    if (ticks != 0) {
-      currentTicks = currentTicks + ticks;
-    }
+
+    m_prevTicks = ticks;
 
     if (event.getId() == 20) {  // EVENT_MODULE_MAP
       uint64_t rtpId = 0;
@@ -99,6 +103,27 @@ base::Status WvrParser::Parse(TraceBlobView blob) {
       ctx_->process_tracker->SetProcessNameIfUnset(
           ctx_->process_tracker->GetOrCreateProcess(rtpId),
           ctx_->storage->InternString(name));
+    } else if (event.getId() == 8) {  // EVENT_TIMESTAMP_CONFIG
+      for (auto param : event.getParams()) {
+        vector<uint8_t> payload = param.getPayload();
+        if (param.getName() == "timestampFreq") {
+          uint8_t bytes[4];
+          memcpy(bytes, payload.data(), 4);
+          timestampFreq = reader.readUINT32(bytes);
+        } else if (param.getName() == "timestampPeriod") {
+          uint8_t bytes[4];
+          memcpy(bytes, payload.data(), 4);
+          timestampPeriod = reader.readUINT32(bytes);
+        } else if (param.getName() == "autoRollover") {
+          uint8_t bytes[4];
+          memcpy(bytes, payload.data(), 4);
+          autoRollover = reader.readUINT32(bytes);
+        } else if (param.getName() == "clkRate") {
+          uint8_t bytes[4];
+          memcpy(bytes, payload.data(), 4);
+          clkRate = reader.readUINT32(bytes);
+        }
+      }
     } else if (event.getId() == 10) {  // EVENT_CPU_ID
       for (auto param : event.getParams()) {
         vector<uint8_t> payload = param.getPayload();
@@ -125,15 +150,17 @@ base::Status WvrParser::Parse(TraceBlobView blob) {
           priority = reader.readUINT64(bytes);
         }
       }
+      uint64_t time = (static_cast<double>(lastTimeStamp) / static_cast<double>(timestampFreq)) * 1000 * 1000 ;
 
-      ctx_->sched_event_tracker->AddStartSlice(
-          currentCpuId, currentTicks, tid, priority);
+      ctx_->sched_event_tracker->AddStartSlice(currentCpuId, time, tid,
+                                               priority);
 
     } else if (event.getId() == 3) {  // EVENT_TASKNAME
       uint64_t taskId = 0;
       uint64_t rtpId = 0;
       int64_t cpuIndex = 0;
       string name = "";
+      vector<uint8_t> taskIdpayload;
       for (auto param : event.getParams()) {
         vector<uint8_t> payload = param.getPayload();
         if (param.getName() == "name") {
@@ -142,6 +169,7 @@ base::Status WvrParser::Parse(TraceBlobView blob) {
           uint8_t bytes[8];
           memcpy(bytes, payload.data(), 8);
           taskId = reader.readUINT64(bytes);
+          taskIdpayload = payload;
         } else if (param.getName() == "rtpId") {
           uint8_t bytes[8];
           memcpy(bytes, payload.data(), 8);
@@ -152,7 +180,8 @@ base::Status WvrParser::Parse(TraceBlobView blob) {
           cpuIndex = reader.readUINT64(bytes);
         }
       }
-
+      cout << "name=" << name << " taskId=" << taskId
+           << " payload=" << reader.bytesToString(taskIdpayload) << std::endl;
       ctx_->process_tracker->GetOrCreateProcess(rtpId);
       auto utid = ctx_->process_tracker->UpdateThread(taskId, rtpId);
 
