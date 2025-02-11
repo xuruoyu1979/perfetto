@@ -2,6 +2,8 @@ source_set("full") {
   sources = [
     "wvr_parser.cc",
     "wvr_parser.h",
+    "wind_exit_dispatch_event_tracker.cc",
+    "wind_exit_dispatch_event_tracker.h",
     "tinyxml2.cc",
     "tinyxml2.h",
     "defXML.h",

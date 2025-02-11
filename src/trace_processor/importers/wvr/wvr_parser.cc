@@ -15,6 +15,7 @@
  */
 
 #include "src/trace_processor/importers/wvr/wvr_parser.h"
+#include "src/trace_processor/importers/wvr/wind_exit_dispatch_event_tracker.h"
 #include "src/trace_processor/importers/wvr/wvrLib.h"
 
 #include <algorithm>
@@ -62,6 +63,7 @@ base::Status WvrParser::Parse(TraceBlobView blob) {
   WVRFileReader reader(0, blob.size(), isLittleEndian);
 
   std::map<uint64_t, Event> module_map;
+  std::map<uint64_t, uint64_t> tid_pid_map;
 
   vector<Event> eventCache;
 
@@ -150,10 +152,14 @@ base::Status WvrParser::Parse(TraceBlobView blob) {
           priority = reader.readUINT64(bytes);
         }
       }
-      uint64_t time = (static_cast<double>(lastTimeStamp) / static_cast<double>(timestampFreq)) * 1000 * 1000 ;
+      uint64_t time = (static_cast<double>(lastTimeStamp) /
+                       static_cast<double>(timestampFreq)) *
+                      1000 * 1000;
 
-      ctx_->sched_event_tracker->AddStartSlice(currentCpuId, time, tid,
-                                               priority);
+      WindExitDispatchTracker* wind_exit_dispatch_tracker =
+          WindExitDispatchTracker::GetOrCreate(ctx_);
+      wind_exit_dispatch_tracker->PushSchedSwitch(currentCpuId, time, tid,
+                                                  tid_pid_map[tid], priority);
 
     } else if (event.getId() == 3) {  // EVENT_TASKNAME
       uint64_t taskId = 0;
@@ -180,6 +186,7 @@ base::Status WvrParser::Parse(TraceBlobView blob) {
           cpuIndex = reader.readUINT64(bytes);
         }
       }
+      tid_pid_map[taskId] = rtpId;
       cout << "name=" << name << " taskId=" << taskId
            << " payload=" << reader.bytesToString(taskIdpayload) << std::endl;
       ctx_->process_tracker->GetOrCreateProcess(rtpId);
@@ -188,9 +195,6 @@ base::Status WvrParser::Parse(TraceBlobView blob) {
       StringId name_id = ctx_->storage->InternString(name);
       ctx_->process_tracker->UpdateThreadNameByUtid(utid, name_id,
                                                     ThreadNamePriority::kOther);
-      TrackId track_id = ctx_->track_tracker->InternThreadTrack(utid);
-
-      ctx_->slice_tracker->Scoped(10, track_id, StringId::Null(), name_id, 200);
     }
     total_events++;
   }
