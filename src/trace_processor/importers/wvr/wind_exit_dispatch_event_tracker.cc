@@ -58,7 +58,7 @@ void WindExitDispatchTracker::PushSchedSwitch(uint32_t cpu,
   // two compact events for a given cpu).
   uint32_t pending_slice_idx = pending_sched->pending_slice_storage_idx;
 
-  StringId prev_state_str_id = StringId::Raw(1);
+  StringId prev_state_str_id = StringId::Raw(0);
 
   if (pending_slice_idx != std::numeric_limits<uint32_t>::max()) {
     context_->sched_event_tracker->ClosePendingSlice(pending_slice_idx, ts,
