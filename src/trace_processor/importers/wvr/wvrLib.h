@@ -48,9 +48,9 @@ namespace wvrlib
         WVRFileReader(int32_t start, int64_t total, bool isLEndian);
         bool parseEvent(const char* buffer);
         Event getCurrentEvent() const { return currentEvent; }
-        int16_t readUINT16(uint8_t buffer[2]);
-        int32_t readUINT32(uint8_t buffer[4]);
-        int64_t readUINT64(uint8_t buffer[8]);
+        uint16_t readUINT16(uint8_t buffer[2]);
+        uint32_t readUINT32(uint8_t buffer[4]);
+        uint64_t readUINT64(uint8_t buffer[8]);
         string bytesToString(const vector<uint8_t> &bytes)
         {
             string result;

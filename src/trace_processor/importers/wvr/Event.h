@@ -12,15 +12,18 @@ class Event
 private:
     string name;
     uint16_t id;
-    int32_t ticks;
+    uint32_t ticks;
+    bool hastimestamp = true;
     vector<Param> params;
 
 public:
     // 构造函数、getter和setter方法
-    Event(string n, uint16_t i, int32_t t,  vector<Param> p) : name(n), id(i), ticks(t), params(p) {}
+    Event(string n, uint16_t i, uint32_t t,  vector<Param> p) : name(n), id(i), ticks(t), params(p) {}
     string getName() const { return name; }
     uint16_t getId() const { return id; }
-    int32_t getTicks() const { return ticks; }
+    uint32_t getTicks() const { return ticks; }
+    bool hasTimeStamp() const { return hastimestamp; }
+    void setHasTimeStamp(bool t) { hastimestamp = t; }
     vector<Param> getParams() const { return params; }
 };
 

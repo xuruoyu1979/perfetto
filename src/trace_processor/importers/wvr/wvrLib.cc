@@ -75,25 +75,25 @@ vector<uint8_t> WVRFileReader::readPayload(const char* input, EVENT_TYPE type) {
   return payload;
 }
 
-int16_t WVRFileReader::readUINT16(uint8_t bytes[2]) {
+uint16_t WVRFileReader::readUINT16(uint8_t bytes[2]) {
   if (isLittleEndian) {
-    return static_cast<int16_t>((bytes[1] << 8) | bytes[0]);
+    return static_cast<uint16_t>((bytes[1] << 8) | bytes[0]);
   } else {
-    return static_cast<int16_t>((bytes[0] << 8) | bytes[1]);
+    return static_cast<uint16_t>((bytes[0] << 8) | bytes[1]);
   }
 }
 
-int32_t WVRFileReader::readUINT32(uint8_t bytes[4]) {
+uint32_t WVRFileReader::readUINT32(uint8_t bytes[4]) {
   if (isLittleEndian) {
-    return static_cast<int32_t>((bytes[3] << 24) | (bytes[2] << 16) |
+    return static_cast<uint32_t>((bytes[3] << 24) | (bytes[2] << 16) |
                                 (bytes[1] << 8) | bytes[0]);
   } else {
-    return static_cast<int32_t>((bytes[0] << 24) | (bytes[1] << 16) |
+    return static_cast<uint32_t>((bytes[0] << 24) | (bytes[1] << 16) |
                                 (bytes[2] << 8) | bytes[3]);
   }
 }
 
-int64_t WVRFileReader::readUINT64(uint8_t bytes[8]) {
+uint64_t WVRFileReader::readUINT64(uint8_t bytes[8]) {
   if (isLittleEndian) {
     return ((uint64_t)bytes[7] << 56) | ((uint64_t)bytes[6] << 48) |
            ((uint64_t)bytes[5] << 40) | ((uint64_t)bytes[4] << 32) |
@@ -124,7 +124,7 @@ bool WVRFileReader::parseEvent(const char* input) {
   }
 
   // 获取ticks
-  int32_t ticks = 0;
+  uint32_t ticks = 0;
   if (it->second.getHasTimeStamp()) {
     uint8_t tickBuffer[4];
     memcpy(tickBuffer, input + pos, sizeof(tickBuffer));
@@ -141,6 +141,9 @@ bool WVRFileReader::parseEvent(const char* input) {
   }
 
   currentEvent = Event(it->second.getName(), id, ticks, params);
+  if (!it->second.getHasTimeStamp()) {
+    currentEvent.setHasTimeStamp(false);
+  }
   return true;
 }
 }  // namespace wvrlib

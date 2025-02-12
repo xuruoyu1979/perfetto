@@ -69,24 +69,28 @@ base::Status WvrParser::Parse(TraceBlobView blob) {
 
   int16_t currentCpuId = 0;
   int64_t lastTimeStamp = 0;
-  int64_t m_prevTicks = 0;
+  uint64_t m_prevTicks = 0;
 
   int32_t timestampFreq = 0;
-  int32_t timestampPeriod = 0;
+  uint32_t timestampPeriod = 0;
   int32_t autoRollover = 0;
   int32_t clkRate = 0;
 
   while (reader.parseEvent(src)) {
     Event event = reader.getCurrentEvent();
-    int64_t ticks = event.getTicks();
-    // determine whether the timer has rolled round
-    if (ticks > m_prevTicks) {
-      lastTimeStamp = lastTimeStamp + (ticks - m_prevTicks);
-    } else {
-      lastTimeStamp = lastTimeStamp + ticks + timestampPeriod - m_prevTicks;
+
+    if(event.hasTimeStamp()) {
+      uint64_t ticks = event.getTicks();
+      // determine whether the timer has rolled round
+      if (ticks >= m_prevTicks) {
+        lastTimeStamp = lastTimeStamp + (ticks - m_prevTicks);
+      } else {
+        lastTimeStamp = lastTimeStamp + ticks + timestampPeriod - m_prevTicks;
+      }
+  
+      m_prevTicks = ticks;
     }
 
-    m_prevTicks = ticks;
 
     if (event.getId() == 20) {  // EVENT_MODULE_MAP
       uint64_t rtpId = 0;
@@ -158,7 +162,7 @@ base::Status WvrParser::Parse(TraceBlobView blob) {
 
       WindExitDispatchTracker* wind_exit_dispatch_tracker =
           WindExitDispatchTracker::GetOrCreate(ctx_);
-      wind_exit_dispatch_tracker->PushSchedSwitch(currentCpuId, time, tid,
+      wind_exit_dispatch_tracker->PushSchedSwitch(currentCpuId, time, tid, 
                                                   tid_pid_map[tid], priority);
 
     } else if (event.getId() == 3) {  // EVENT_TASKNAME
@@ -187,8 +191,6 @@ base::Status WvrParser::Parse(TraceBlobView blob) {
         }
       }
       tid_pid_map[taskId] = rtpId;
-      cout << "name=" << name << " taskId=" << taskId
-           << " payload=" << reader.bytesToString(taskIdpayload) << std::endl;
       ctx_->process_tracker->GetOrCreateProcess(rtpId);
       auto utid = ctx_->process_tracker->UpdateThread(taskId, rtpId);
 
