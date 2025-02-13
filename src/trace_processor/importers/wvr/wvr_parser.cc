@@ -146,9 +146,7 @@ base::Status WvrParser::Parse(TraceBlobView blob) {
         if (param.getName() == "fileName") {
           name = string(payload.begin(), payload.end());
         } else if (param.getName() == "RtpId") {
-          uint8_t bytes[8];
-          memcpy(bytes, payload.data(), 8);
-          rtpId = reader.readUINT64(bytes);
+          rtpId = reader.readUINT(param);
         }
       }
       // std::cout << "Set RTP Name=" << name << " id=" << rtpId << std::endl;
@@ -159,30 +157,20 @@ base::Status WvrParser::Parse(TraceBlobView blob) {
       for (auto param : event.getParams()) {
         vector<uint8_t> payload = param.getPayload();
         if (param.getName() == "timestampFreq") {
-          uint8_t bytes[4];
-          memcpy(bytes, payload.data(), 4);
-          timestampFreq = reader.readUINT32(bytes);
+          timestampFreq = reader.readUINT(param);
         } else if (param.getName() == "timestampPeriod") {
-          uint8_t bytes[4];
-          memcpy(bytes, payload.data(), 4);
-          timestampPeriod = reader.readUINT32(bytes);
+          timestampPeriod = reader.readUINT(param);
         } else if (param.getName() == "autoRollover") {
-          uint8_t bytes[4];
-          memcpy(bytes, payload.data(), 4);
-          autoRollover = reader.readUINT32(bytes);
+          autoRollover = reader.readUINT(param);
         } else if (param.getName() == "clkRate") {
-          uint8_t bytes[4];
-          memcpy(bytes, payload.data(), 4);
-          clkRate = reader.readUINT32(bytes);
+          clkRate = reader.readUINT(param);
         }
       }
     } else if (event.getId() == 10) {  // EVENT_CPU_ID
       for (auto param : event.getParams()) {
         vector<uint8_t> payload = param.getPayload();
         if (param.getName() == "cpuId") {
-          uint8_t bytes[2];
-          memcpy(bytes, payload.data(), 2);
-          currentCpuId = reader.readUINT16(bytes);
+          currentCpuId = reader.readUINT(param);
         }
       }
     } else if (event.getId() == 52) {  // EVENT_WIND_EXIT_DISPATCH
@@ -193,13 +181,9 @@ base::Status WvrParser::Parse(TraceBlobView blob) {
       for (auto param : event.getParams()) {
         vector<uint8_t> payload = param.getPayload();
         if (param.getName() == "tid") {
-          uint8_t bytes[8];
-          memcpy(bytes, payload.data(), 8);
-          tid = reader.readUINT64(bytes);
+          tid = reader.readUINT(param);
         } else if (param.getName() == "priority") {
-          uint8_t bytes[8];
-          memcpy(bytes, payload.data(), 8);
-          priority = reader.readUINT64(bytes);
+          priority = reader.readUINT(param);
         }
       }
       uint64_t time = (static_cast<double>(lastTimeStamp) /
@@ -222,18 +206,11 @@ base::Status WvrParser::Parse(TraceBlobView blob) {
         if (param.getName() == "name") {
           name = string(payload.begin(), payload.end());
         } else if (param.getName() == "taskId") {
-          uint8_t bytes[8];
-          memcpy(bytes, payload.data(), 8);
-          taskId = reader.readUINT64(bytes);
-          taskIdpayload = payload;
+          taskId = reader.readUINT(param);
         } else if (param.getName() == "rtpId") {
-          uint8_t bytes[8];
-          memcpy(bytes, payload.data(), 8);
-          rtpId = reader.readUINT64(bytes);
+          rtpId = reader.readUINT(param);
         } else if (param.getName() == "cpuIndex") {
-          uint8_t bytes[8];
-          memcpy(bytes, payload.data(), 8);
-          cpuIndex = reader.readUINT64(bytes);
+          cpuIndex = reader.readUINT(param);
         }
       }
       tid_pid_map[taskId] = rtpId;
