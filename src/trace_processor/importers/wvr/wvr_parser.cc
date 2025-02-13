@@ -56,7 +56,7 @@ base::Status WvrParser::Parse(TraceBlobView blob) {
   uint8_t magic[2];
   uint8_t revisionPayload[4];
   memcpy(magic, src, sizeof(magic));
-  memcpy(revisionPayload, src+2, sizeof(revisionPayload));
+  memcpy(revisionPayload, src + 2, sizeof(revisionPayload));
   bool isLittleEndian = false;
 
   if (magic[0] == 0x04 && magic[1] == 0x00) {
@@ -83,7 +83,7 @@ base::Status WvrParser::Parse(TraceBlobView blob) {
   while (reader.parseEvent(src)) {
     Event event = reader.getCurrentEvent();
 
-    if(event.hasTimeStamp()) {
+    if (event.hasTimeStamp()) {
       uint64_t ticks = event.getTicks();
       // determine whether the timer has rolled round
       if (ticks >= m_prevTicks) {
@@ -91,10 +91,9 @@ base::Status WvrParser::Parse(TraceBlobView blob) {
       } else {
         lastTimeStamp = lastTimeStamp + ticks + timestampPeriod - m_prevTicks;
       }
-  
+
       m_prevTicks = ticks;
     }
-
 
     if (event.getId() == 20) {  // EVENT_MODULE_MAP
       uint64_t rtpId = 0;
@@ -166,7 +165,7 @@ base::Status WvrParser::Parse(TraceBlobView blob) {
 
       WindExitDispatchTracker* wind_exit_dispatch_tracker =
           WindExitDispatchTracker::GetOrCreate(ctx_);
-      wind_exit_dispatch_tracker->PushSchedSwitch(currentCpuId, time, tid, 
+      wind_exit_dispatch_tracker->PushSchedSwitch(currentCpuId, time, tid,
                                                   tid_pid_map[tid], priority);
 
     } else if (event.getId() == 3) {  // EVENT_TASKNAME
@@ -206,6 +205,7 @@ base::Status WvrParser::Parse(TraceBlobView blob) {
   }
 
   std::cout << "wvr file size=" << blob.size()
+            << " pos=" << reader.getPosition()
             << " total_events=" << total_events << std::endl;
 
   return base::OkStatus();

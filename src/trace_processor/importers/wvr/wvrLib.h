@@ -48,6 +48,7 @@ namespace wvrlib
         void init(uint8_t bytes[4]);
         bool parseEvent(const char* buffer);
         Event getCurrentEvent() const { return currentEvent; }
+        uint32_t getPosition() const { return pos; }
         uint16_t readUINT16(uint8_t buffer[2]);
         uint32_t readUINT32(uint8_t buffer[4]);
         uint64_t readUINT64(uint8_t buffer[8]);

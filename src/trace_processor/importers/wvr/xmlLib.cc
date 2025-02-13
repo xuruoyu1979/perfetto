@@ -3,6 +3,7 @@
 #include <map>
 #include "tinyxml2.h"
 #include "v764smpdefXML.h"
+#include "v732smpdefXML.h"
 
 namespace xmllib {
 using namespace std;
@@ -11,7 +12,7 @@ using namespace tinyxml2;
 std::map<std::uint32_t, std::map<std::int16_t, EventDescription>> allEventMap;
 bool isInitialized = false;
 
-std::string vx764smpxmls[26] = {v7_64_smp_apexlib_xml,
+std::string vx764xmls[26] = {v7_64_smp_apexlib_xml,
                                 v7_64_smp_dprintf_xml,
                                 v7_64_smp_edr_xml,
                                 v7_64_smp_iolib_xml,
@@ -37,6 +38,33 @@ std::string vx764smpxmls[26] = {v7_64_smp_apexlib_xml,
                                 v7_64_smp_vxdcom_xml,
                                 v7_64_smp_vxworks_xml,
                                 v7_64_smp_wrsvCoreEvents_xml};
+
+std::string vx732xmls[26] = {v7_32_smp_apexlib_xml,
+                                v7_32_smp_dprintf_xml,
+                                v7_32_smp_edr_xml,
+                                v7_32_smp_ioLib_xml,
+                                v7_32_smp_isrlib_xml,
+                                v7_32_smp_memlib_xml,
+                                v7_32_smp_netdlib_xml,
+                                v7_32_smp_objlib_xml,
+                                v7_32_smp_pidia_xml,
+                                v7_32_smp_powerMng_xml,
+                                v7_32_smp_rtplib_xml,
+                                v7_32_smp_rtpSignals_xml,
+                                v7_32_smp_salLib_xml,
+                                v7_32_smp_scopetools_xml,
+                                v7_32_smp_sdLib_xml,
+                                v7_32_smp_sensorpoint_xml,
+                                v7_32_smp_syscalls_syn_xml_part1,
+                                v7_32_smp_syscalls_syn_xml_part2,
+                                v7_32_smp_syscalls_xml,
+                                v7_32_smp_tipclib_xml,
+                                v7_32_smp_usbHost_xml,
+                                v7_32_smp_usbPeripheral_xml,
+                                v7_32_smp_user_xml,
+                                v7_32_smp_vxdcom_xml,
+                                v7_32_smp_vxworks_xml,
+                                v7_32_smp_wrsvCoreEvents_xml};
 
 std::map<int16_t, EventDescription> parseXml(const std::string& xmlString) {
   std::map<int16_t, EventDescription> eventMap;
@@ -106,17 +134,36 @@ std::map<int16_t, EventDescription> parseXml(const std::string& xmlString) {
 
 std::map<int16_t, EventDescription> getEventMap(uint32_t revisionId) {
   if (!isInitialized) {
+    // initial xml definition for vxworks7 64bit.
     uint32_t v764smpRevId = 0xB1C2C000;
-    std::map<int16_t, EventDescription> v764smpEventMap;
+    uint32_t v764RevId = 0xB1C24000;
+    std::map<int16_t, EventDescription> v764EventMap;
 
-    for (const auto& xml : vx764smpxmls) {
+    for (const auto& xml : vx764xmls) {
       std::map<int16_t, EventDescription> eventMap = parseXml(xml);
       for (const auto& pair : eventMap) {
-        v764smpEventMap[pair.first] = pair.second;
+        v764EventMap[pair.first] = pair.second;
       }
     }
 
-    allEventMap[v764smpRevId] = v764smpEventMap;
+    allEventMap[v764smpRevId] = v764EventMap;
+    allEventMap[v764RevId] = v764EventMap;
+
+    // initial xml definition for vxworks7 32bit.
+    uint32_t v732smpRevId = 0xB1C28000;
+    uint32_t v732RevId = 0xB1C20000;
+    std::map<int16_t, EventDescription> v732EventMap;
+
+    for (const auto& xml : vx732xmls) {
+      std::map<int16_t, EventDescription> eventMap = parseXml(xml);
+      for (const auto& pair : eventMap) {
+        v732EventMap[pair.first] = pair.second;
+      }
+    }
+
+    allEventMap[v732smpRevId] = v732EventMap;
+    allEventMap[v732RevId] = v732EventMap;
+
     isInitialized = true;
   }
   return allEventMap[revisionId];
