@@ -73,6 +73,18 @@ class WVRFileReader {
     }
     return result;
   }
+
+  string toPrintableString(const std::vector<uint8_t>& buffer) {
+    std::string result;
+    for (size_t i = 0; i < buffer.size(); ++i) {
+      unsigned char c = static_cast<unsigned char>(buffer[i]);
+      if (!isprint(c)) {
+        break;
+      }
+      result += static_cast<char>(c);
+    }
+    return result;
+  }
 };
 }  // namespace wvrlib
 

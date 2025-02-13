@@ -144,7 +144,7 @@ base::Status WvrParser::Parse(TraceBlobView blob) {
       for (auto param : event.getParams()) {
         vector<uint8_t> payload = param.getPayload();
         if (param.getName() == "fileName") {
-          name = string(payload.begin(), payload.end());
+          name = reader.toPrintableString(payload);
         } else if (param.getName() == "RtpId") {
           rtpId = reader.readUINT(param);
         }
@@ -204,7 +204,7 @@ base::Status WvrParser::Parse(TraceBlobView blob) {
       for (auto param : event.getParams()) {
         vector<uint8_t> payload = param.getPayload();
         if (param.getName() == "name") {
-          name = string(payload.begin(), payload.end());
+          name = reader.toPrintableString(payload);
         } else if (param.getName() == "taskId") {
           taskId = reader.readUINT(param);
         } else if (param.getName() == "rtpId") {
