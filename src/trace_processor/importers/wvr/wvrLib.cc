@@ -14,6 +14,12 @@ WVRFileReader::WVRFileReader(int32_t start, int64_t total, bool isLEndian) {
   isLittleEndian = isLEndian;
 }
 
+void WVRFileReader::init(uint8_t bytes[4]) {
+  uint32_t revisionId = readUINT32(bytes);
+  cout << "wvr file revisionId=" << revisionId << std::endl;
+  eventDescMap = xmllib::getEventMap(revisionId);
+}
+
 vector<uint8_t> WVRFileReader::readPayload(const char* input, EVENT_TYPE type) {
   vector<uint8_t> payload;
   switch (type) {

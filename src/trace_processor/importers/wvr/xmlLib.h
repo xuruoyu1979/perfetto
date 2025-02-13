@@ -2,14 +2,12 @@
 #define XML_LIB_H
 
 #include <map>
-#include "EventParam.h"
 #include "EventDescription.h"
+#include "EventParam.h"
 
-namespace xmllib
-{
+namespace xmllib {
 
-    std::map<std::int16_t, EventDescription> getEventMap();
+std::map<std::int16_t, EventDescription> getEventMap(std::uint32_t revisionId);
+}  // namespace xmllib
 
-} // namespace xmllib
-
-#endif // XML_LIB_H
+#endif  // XML_LIB_H

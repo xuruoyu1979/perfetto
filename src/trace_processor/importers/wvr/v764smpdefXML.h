@@ -2,7 +2,7 @@
 #ifndef VXWORKS7_64_SMP_XML
 #define VXWORKS7_64_SMP_XML
 
-std::string apexlib_xml = R"delim(
+std::string v7_64_smp_apexlib_xml = R"delim(
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
 /* apexlib.xml */
@@ -238,7 +238,7 @@ modification history
 )delim";
 
 
-std::string dprintf_xml = R"delim(
+std::string v7_64_smp_dprintf_xml = R"delim(
 <?xml version="1.0" encoding="utf-8"?>
 <!--
 /* dynamic_printf.xml - XML descriptions for dynamic printf */
@@ -263,7 +263,7 @@ modification history
 )delim";
 
 
-std::string edr_xml = R"delim(
+std::string v7_64_smp_edr_xml = R"delim(
 <?xml version="1.0" encoding="utf-8"?>
 <!--
 /* edr.xml - XML descriptions for ED&R */
@@ -307,7 +307,7 @@ modification history
 )delim";
 
 
-std::string iolib_xml = R"delim(
+std::string v7_64_smp_iolib_xml = R"delim(
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
 /* ioLib.xml - XML descriptions for vxWorks 6 ioLib events */
@@ -375,7 +375,7 @@ modification history
 )delim";
 
 
-std::string isrlib_xml = R"delim(
+std::string v7_64_smp_isrlib_xml = R"delim(
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
 /* isrlib.xml - XML descriptions for vxWorks 6 isrLib events */
@@ -424,7 +424,7 @@ modification history
 )delim";
 
 
-std::string memlib_xml = R"delim(
+std::string v7_64_smp_memlib_xml = R"delim(
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
 /* vxworks.xml - XML descriptions for vxWorks 6.7 memory events */
@@ -501,7 +501,7 @@ modification history
 )delim";
 
 
-std::string netdlib_xml = R"delim(
+std::string v7_64_smp_netdlib_xml = R"delim(
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE EventDictionary SYSTEM "../../DTDs/EventDictionary.dtd">
 <EventDictionary>
@@ -547,7 +547,7 @@ std::string netdlib_xml = R"delim(
 )delim";
 
 
-std::string objlib_xml = R"delim(
+std::string v7_64_smp_objlib_xml = R"delim(
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
 /* isrlib.xml - XML descriptions for vxWorks 6 objLib events */
@@ -573,7 +573,7 @@ modification history
 )delim";
 
 
-std::string pidia_xml = R"delim(
+std::string v7_64_smp_pidia_xml = R"delim(
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE EventDictionary SYSTEM "../../DTDs/EventDictionary.dtd">
 <EventDictionary>
@@ -607,7 +607,7 @@ std::string pidia_xml = R"delim(
 )delim";
 
 
-std::string powerMng_xml = R"delim(
+std::string v7_64_smp_powerMng_xml = R"delim(
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
 /* vxworks.xml - XML descriptions for vxWorks 6.9.2 power management events */
@@ -677,7 +677,7 @@ modification history
 )delim";
 
 
-std::string rtplib_xml = R"delim(
+std::string v7_64_smp_rtplib_xml = R"delim(
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
 /* rtplib.xml - XML descriptions for vxWorks 6 RTP events */
@@ -748,7 +748,7 @@ modification history
 )delim";
 
 
-std::string rtpSignals_xml = R"delim(
+std::string v7_64_smp_rtpSignals_xml = R"delim(
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
 /* vxworks.xml - XML descriptions for vxWorks 6 */
@@ -843,7 +843,7 @@ modification history
 )delim";
 
 
-std::string salib_xml = R"delim(
+std::string v7_64_smp_salib_xml = R"delim(
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
 /* salLib.xml - XML descriptions for SAL library events */
@@ -952,7 +952,7 @@ modification history
 )delim";
 
 
-std::string scopetools_xml = R"delim(
+std::string v7_64_smp_scopetools_xml = R"delim(
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE EventDictionary SYSTEM "../../DTDs/EventDictionary.dtd">
 <EventDictionary>
@@ -1008,7 +1008,7 @@ std::string scopetools_xml = R"delim(
 )delim";
 
 
-std::string sdlib_xml = R"delim(
+std::string v7_64_smp_sdlib_xml = R"delim(
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
 /* sdLib.xml - XML descriptions for vxWorks 6 sdLib events */
@@ -1067,7 +1067,7 @@ modification history
 )delim";
 
 
-std::string sensorpoint_xml = R"delim(
+std::string v7_64_smp_sensorpoint_xml = R"delim(
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE EventDictionary SYSTEM "../../DTDs/EventDictionary.dtd">
 <EventDictionary>
@@ -1098,7 +1098,7 @@ std::string sensorpoint_xml = R"delim(
 )delim";
 
 
-std::string syscallws_syn_xml_part1 = R"delim(
+std::string v7_64_smp_syscallws_syn_xml_part1 = R"delim(
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <!DOCTYPE EventDictionary SYSTEM "../../DTDs/EventDictionary.dtd">
 <EventDictionary>
@@ -1557,7 +1557,7 @@ std::string syscallws_syn_xml_part1 = R"delim(
 )delim";
 
 
-std::string syscallws_syn_xml_part2 = R"delim(
+std::string v7_64_smp_syscallws_syn_xml_part2 = R"delim(
     <?xml version="1.0" encoding="UTF-8" standalone="no"?>
     <!DOCTYPE EventDictionary SYSTEM "../../DTDs/EventDictionary.dtd">
     <EventDictionary>
@@ -2124,7 +2124,7 @@ std::string syscallws_syn_xml_part2 = R"delim(
     )delim";
 
 
-std::string syscalls_xml = R"delim(
+std::string v7_64_smp_syscalls_xml = R"delim(
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
 /* syscalls.xml - XML descriptions for vxWorks 6 system calls from RTPs */
@@ -2256,7 +2256,7 @@ modification history
 )delim";
 
 
-std::string tipclib_xml = R"delim(
+std::string v7_64_smp_tipclib_xml = R"delim(
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE EventDictionary SYSTEM "../../DTDs/EventDictionary.dtd">
 <EventDictionary>
@@ -2302,7 +2302,7 @@ std::string tipclib_xml = R"delim(
 )delim";
 
 
-std::string usbHost_xml = R"delim(
+std::string v7_64_smp_usbHost_xml = R"delim(
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
 /* usbHost.xml - XML descriptions for USB 2.0 Host Stack events */
@@ -2449,7 +2449,7 @@ modification history
 )delim";
 
 
-std::string usbPeripheral_xml = R"delim(
+std::string v7_64_smp_usbPeripheral_xml = R"delim(
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
 /* usbPeripheral.xml - XML descriptions for USB 2.0 Peripheral Stack events */
@@ -2608,7 +2608,7 @@ modification history
 )delim";
 
 
-std::string user_xml = R"delim(
+std::string v7_64_smp_user_xml = R"delim(
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
 
@@ -2637,7 +2637,7 @@ modification history
 )delim";
 
 
-std::string vxdcom_xml = R"delim(
+std::string v7_64_smp_vxdcom_xml = R"delim(
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE EventDictionary SYSTEM "../../DTDs/EventDictionary.dtd">
 <EventDictionary>
@@ -2703,7 +2703,7 @@ std::string vxdcom_xml = R"delim(
 )delim";
 
 
-std::string vxworks_xml = R"delim(
+std::string v7_64_smp_vxworks_xml = R"delim(
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
 /* vxworks.xml - XML descriptions for vxWorks 6.9, 64bit */
@@ -3412,7 +3412,7 @@ modification history
 )delim";
 
 
-std::string wrsvCoreEvents_xml = R"delim(
+std::string v7_64_smp_wrsvCoreEvents_xml = R"delim(
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
 /* wrsv_core.xml - core XML descriptions for all System Viewer */

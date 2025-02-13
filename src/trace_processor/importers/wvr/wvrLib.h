@@ -17,11 +17,10 @@ namespace wvrlib
     class WVRFileReader
     {
     private:
-        std::map<std::int16_t, EventDescription> eventDescMap = xmllib::getEventMap();
+        std::map<std::int16_t, EventDescription> eventDescMap;
         bool isLittleEndian = false;
         int32_t pos = 0;
         int64_t totalSize = 0;
-        // int64_t currentTimestamp = 0;
         Event currentEvent = Event("",0,0,vector<Param>());
 
         vector<uint8_t> readPayload(const char* input, EVENT_TYPE type);
@@ -46,6 +45,7 @@ namespace wvrlib
 
     public:
         WVRFileReader(int32_t start, int64_t total, bool isLEndian);
+        void init(uint8_t bytes[4]);
         bool parseEvent(const char* buffer);
         Event getCurrentEvent() const { return currentEvent; }
         uint16_t readUINT16(uint8_t buffer[2]);

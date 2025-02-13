@@ -54,13 +54,17 @@ base::Status WvrParser::Parse(TraceBlobView blob) {
 
   // check if is little endian.
   uint8_t magic[2];
+  uint8_t revisionPayload[4];
   memcpy(magic, src, sizeof(magic));
+  memcpy(revisionPayload, src+2, sizeof(revisionPayload));
   bool isLittleEndian = false;
+
   if (magic[0] == 0x04 && magic[1] == 0x00) {
     isLittleEndian = true;
   }
 
   WVRFileReader reader(0, blob.size(), isLittleEndian);
+  reader.init(revisionPayload);
 
   std::map<uint64_t, Event> module_map;
   std::map<uint64_t, uint64_t> tid_pid_map;
