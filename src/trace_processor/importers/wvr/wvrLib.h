@@ -21,6 +21,7 @@ namespace wvrlib
         bool isLittleEndian = false;
         int32_t pos = 0;
         int64_t totalSize = 0;
+        int32_t currentEventSize = 0;
         Event currentEvent = Event("",0,0,vector<Param>());
 
         vector<uint8_t> readPayload(const char* input, EVENT_TYPE type);
@@ -44,11 +45,10 @@ namespace wvrlib
         }
 
     public:
-        WVRFileReader(int32_t start, int64_t total, bool isLEndian);
-        void init(uint8_t bytes[4]);
+        WVRFileReader(int32_t start, int64_t total, bool isLEndian, uint32_t revisionId);
         bool parseEvent(const char* buffer);
         Event getCurrentEvent() const { return currentEvent; }
-        uint32_t getPosition() const { return pos; }
+        uint32_t getCurrentEventSize() const { return currentEventSize; }
         uint16_t readUINT16(uint8_t buffer[2]);
         uint32_t readUINT32(uint8_t buffer[4]);
         uint64_t readUINT64(uint8_t buffer[8]);

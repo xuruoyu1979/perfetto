@@ -8,15 +8,10 @@ namespace wvrlib {
 
 using namespace std;
 
-WVRFileReader::WVRFileReader(int32_t start, int64_t total, bool isLEndian) {
+WVRFileReader::WVRFileReader(int32_t start, int64_t total, bool isLEndian, uint32_t revisionId) {
   pos = start;
   totalSize = total;
   isLittleEndian = isLEndian;
-}
-
-void WVRFileReader::init(uint8_t bytes[4]) {
-  uint32_t revisionId = readUINT32(bytes);
-  cout << "wvr file revisionId=" << revisionId << std::endl;
   eventDescMap = xmllib::getEventMap(revisionId);
 }
 
@@ -27,6 +22,7 @@ vector<uint8_t> WVRFileReader::readPayload(const char* input, EVENT_TYPE type) {
       uint8_t value[1];
       memcpy(value, input + pos, sizeof(value));
       pos += sizeof(value);
+      currentEventSize = currentEventSize + sizeof(value);
       payload.push_back(value[0]);
       break;
     }
@@ -34,6 +30,7 @@ vector<uint8_t> WVRFileReader::readPayload(const char* input, EVENT_TYPE type) {
       uint8_t value[2];
       memcpy(value, input + pos, sizeof(value));
       pos += sizeof(value);
+      currentEventSize = currentEventSize + sizeof(value);
       for (int i = 0; i < 2; ++i) {
         payload.push_back(value[i]);
       }
@@ -43,6 +40,7 @@ vector<uint8_t> WVRFileReader::readPayload(const char* input, EVENT_TYPE type) {
       uint8_t value[4];
       memcpy(value, input + pos, sizeof(value));
       pos += sizeof(value);
+      currentEventSize = currentEventSize + sizeof(value);
       for (int i = 0; i < 4; ++i) {
         payload.push_back(value[i]);
       }
@@ -52,6 +50,7 @@ vector<uint8_t> WVRFileReader::readPayload(const char* input, EVENT_TYPE type) {
       uint8_t value[8];
       memcpy(value, input + pos, sizeof(value));
       pos += sizeof(value);
+      currentEventSize = currentEventSize + sizeof(value);
       for (int i = 0; i < 8; ++i) {
         payload.push_back(value[i]);
       }
@@ -61,6 +60,7 @@ vector<uint8_t> WVRFileReader::readPayload(const char* input, EVENT_TYPE type) {
       uint8_t buffer[4];
       memcpy(buffer, input + pos, sizeof(buffer));
       pos += sizeof(buffer);
+      currentEventSize = currentEventSize + sizeof(buffer);
       const int32_t length = readUINT32(buffer);
       const int32_t len = length & 0x1fffffff;
       const int32_t padding = length >> 29 & 0x7;
@@ -69,6 +69,7 @@ vector<uint8_t> WVRFileReader::readPayload(const char* input, EVENT_TYPE type) {
           static_cast<uint8_t*>(malloc(static_cast<size_t>(fixedlen)));
       memcpy(value, input + pos, fixedlen);
       pos += fixedlen;
+      currentEventSize = currentEventSize + fixedlen;
       for (int i = 0; i < fixedlen; ++i) {
         payload.push_back(value[i]);
       }
@@ -92,10 +93,10 @@ uint16_t WVRFileReader::readUINT16(uint8_t bytes[2]) {
 uint32_t WVRFileReader::readUINT32(uint8_t bytes[4]) {
   if (isLittleEndian) {
     return static_cast<uint32_t>((bytes[3] << 24) | (bytes[2] << 16) |
-                                (bytes[1] << 8) | bytes[0]);
+                                 (bytes[1] << 8) | bytes[0]);
   } else {
     return static_cast<uint32_t>((bytes[0] << 24) | (bytes[1] << 16) |
-                                (bytes[2] << 8) | bytes[3]);
+                                 (bytes[2] << 8) | bytes[3]);
   }
 }
 
@@ -114,20 +115,25 @@ uint64_t WVRFileReader::readUINT64(uint8_t bytes[8]) {
 }
 
 bool WVRFileReader::parseEvent(const char* input) {
-  if (pos == totalSize) {
+
+  currentEventSize = 0;
+
+  if (pos >= totalSize) {
     return false;
   }
 
   // 获取id
   uint8_t idBuffer[2];
   memcpy(idBuffer, input + pos, sizeof(idBuffer));
-  pos += sizeof(idBuffer);
+
   const int16_t id = readID(idBuffer);
   auto it = eventDescMap.find(id);
   if (it == eventDescMap.end()) {
     cout << "找不到event id:" << id << "的定义" << std::endl;
     return false;
   }
+  pos += sizeof(idBuffer);
+  currentEventSize = currentEventSize + 2;
 
   // 获取ticks
   uint32_t ticks = 0;
@@ -135,6 +141,7 @@ bool WVRFileReader::parseEvent(const char* input) {
     uint8_t tickBuffer[4];
     memcpy(tickBuffer, input + pos, sizeof(tickBuffer));
     pos += sizeof(tickBuffer);
+    currentEventSize = currentEventSize + 4;
     ticks = readTimeStamp(tickBuffer);
   }
 

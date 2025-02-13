@@ -46,42 +46,85 @@ using namespace wvrlib;
 WvrParser::WvrParser(TraceProcessorContext* ctx) : ctx_(ctx) {}
 WvrParser::~WvrParser() = default;
 
+bool firstParseCall = true;
+int total_events = 0;
+
+bool isLittleEndian = false;
+uint32_t revisionId = 0;
+
+std::map<uint64_t, Event> module_map;
+std::map<uint64_t, uint64_t> tid_pid_map;
+
+vector<uint8_t> cache;
+
+int16_t currentCpuId = 0;
+int64_t lastTimeStamp = 0;
+uint64_t m_prevTicks = 0;
+
+int32_t timestampFreq = 0;
+uint32_t timestampPeriod = 0;
+int32_t autoRollover = 0;
+int32_t clkRate = 0;
+
 base::Status WvrParser::Parse(TraceBlobView blob) {
   // const char* src = reinterpret_cast<const char*>(blob.data());
 
-  int total_events = 0;
-  const char* src = reinterpret_cast<const char*>(blob.data());
+  uint32_t readedBytes = 0;
+  const char* origSrc = reinterpret_cast<const char*>(blob.data());
 
-  // check if is little endian.
-  uint8_t magic[2];
-  uint8_t revisionPayload[4];
-  memcpy(magic, src, sizeof(magic));
-  memcpy(revisionPayload, src + 2, sizeof(revisionPayload));
-  bool isLittleEndian = false;
+  if (firstParseCall) {
+    // check if is little endian and get revisionId.
+    uint8_t magic[2];
+    memcpy(magic, origSrc, sizeof(magic));
 
-  if (magic[0] == 0x04 && magic[1] == 0x00) {
-    isLittleEndian = true;
+    if (magic[0] == 0x04 && magic[1] == 0x00) {
+      isLittleEndian = true;
+    }
+
+    uint8_t revisionPayload[4];
+    memcpy(revisionPayload, origSrc + 2, sizeof(revisionPayload));
+    if (isLittleEndian) {
+      revisionId = static_cast<uint32_t>(
+          (revisionPayload[3] << 24) | (revisionPayload[2] << 16) |
+          (revisionPayload[1] << 8) | revisionPayload[0]);
+    } else {
+      revisionId = static_cast<uint32_t>(
+          (revisionPayload[0] << 24) | (revisionPayload[1] << 16) |
+          (revisionPayload[2] << 8) | revisionPayload[3]);
+    }
+    firstParseCall = false;
   }
 
-  WVRFileReader reader(0, blob.size(), isLittleEndian);
-  reader.init(revisionPayload);
+  // add cache from last parse before blob if have any.
+  size_t totalLength = cache.size() + blob.size();
+  char* src;
+  if (cache.size() > 0) {
+    src = new char[totalLength];
+    memcpy(src, cache.data(), cache.size());
+    for (size_t i = 0; i < blob.size(); ++i) {
+      src[cache.size() + i] = origSrc[i];
+    }
+    cache.clear();
+  } else {
+    src = const_cast<char*>(origSrc);
+  }
 
-  std::map<uint64_t, Event> module_map;
-  std::map<uint64_t, uint64_t> tid_pid_map;
-
-  vector<Event> eventCache;
-
-  int16_t currentCpuId = 0;
-  int64_t lastTimeStamp = 0;
-  uint64_t m_prevTicks = 0;
-
-  int32_t timestampFreq = 0;
-  uint32_t timestampPeriod = 0;
-  int32_t autoRollover = 0;
-  int32_t clkRate = 0;
+  WVRFileReader reader(0, totalLength, isLittleEndian, revisionId);
 
   while (reader.parseEvent(src)) {
     Event event = reader.getCurrentEvent();
+    uint32_t currentEventSize = reader.getCurrentEventSize();
+    readedBytes = readedBytes + currentEventSize;
+
+    if (readedBytes > totalLength) {
+      int leftBytes = totalLength - (readedBytes - currentEventSize);
+      cout << "Readed Bytes " << readedBytes << " is great than " << totalLength
+           << " currentEventSize=" << currentEventSize << " put " << leftBytes
+           << " into cache." << std::endl;
+      for (int i = 0; i < leftBytes; i++) {
+        cache.push_back(src[totalLength - leftBytes + i]);
+      }
+    }
 
     if (event.hasTimeStamp()) {
       uint64_t ticks = event.getTicks();
@@ -108,7 +151,7 @@ base::Status WvrParser::Parse(TraceBlobView blob) {
           rtpId = reader.readUINT64(bytes);
         }
       }
-      std::cout << "Set RTP Name=" << name << " id=" << rtpId << std::endl;
+      // std::cout << "Set RTP Name=" << name << " id=" << rtpId << std::endl;
       ctx_->process_tracker->SetProcessNameIfUnset(
           ctx_->process_tracker->GetOrCreateProcess(rtpId),
           ctx_->storage->InternString(name));
@@ -204,9 +247,8 @@ base::Status WvrParser::Parse(TraceBlobView blob) {
     total_events++;
   }
 
-  std::cout << "wvr file size=" << blob.size()
-            << " pos=" << reader.getPosition()
-            << " total_events=" << total_events << std::endl;
+  std::cout << "trunk size=" << totalLength << " total_events=" << total_events
+            << std::endl;
 
   return base::OkStatus();
 }
