@@ -42,23 +42,14 @@ class WvrParser : public ChunkedTraceReader {
   base::Status NotifyEndOfFile() override;
 
  private:
-  struct Job {
-    Job(int64_t s, int64_t e, uint64_t h, const std::string& n)
-        : start_ms(s), end_ms(e), hash(h), names(n) {}
-
-    int64_t start_ms;
-    int64_t end_ms;
-    uint64_t hash;  // Hash of the compiler invocation cmdline.
-
-    // Typically the one output for the compiler invocation. In case of actions
-    // generating multiple outputs this contains the join of all output names.
-    std::string names;
-  };
-
   TraceProcessorContext* const ctx_;
   // bool header_parsed_ = false;
-  std::vector<Job> jobs_;
   std::vector<char> log_;
+};
+
+struct ProcessContext {
+  uint64_t tid;
+  uint64_t priority;
 };
 
 }  // namespace perfetto::trace_processor

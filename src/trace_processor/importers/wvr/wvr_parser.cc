@@ -57,7 +57,13 @@ std::map<uint64_t, uint64_t> tid_pid_map;
 
 std::map<string, uint64_t>
     findedInterruptOnCpu;  // key is int_num/core_num, value is int_num
-std::map<uint64_t, uint64_t> currentContextOnCpu;
+std::map<uint64_t, ProcessContext> currentContextOnCpu;
+
+std::map<uint64_t, ProcessContext>
+    prevContextOnCpu;  // store the prev context when interrupted, will schedule
+                       // to it when int exit.
+
+const uint64_t DEFAULT_INT_PRIORITY = 99;
 
 vector<uint8_t> cache;
 
@@ -214,17 +220,29 @@ base::Status WvrParser::Parse(TraceBlobView blob) {
         StringId name_id = ctx_->storage->InternString(currentIntOnCpu);
         ctx_->process_tracker->UpdateThreadNameByUtid(
             utid, name_id, ThreadNamePriority::kOther);
-
-        cout << "set processName for int:" << intName << " taskName:" << currentIntOnCpu << std::endl;
       }
 
+      prevContextOnCpu[currentCpuId] = currentContextOnCpu[currentCpuId];
+
       findedInterruptOnCpu[currentIntOnCpu] = intNum;
-      currentContextOnCpu[currentCpuId] = intNum;
+
+      ProcessContext procCtx = {intNum, DEFAULT_INT_PRIORITY};
+      currentContextOnCpu[currentCpuId] = procCtx;
 
       WindExitDispatchTracker* wind_exit_dispatch_tracker =
           WindExitDispatchTracker::GetOrCreate(ctx_);
-      wind_exit_dispatch_tracker->PushSchedSwitch(currentCpuId, time, tid,
-                                                  tid_pid_map[tid], 99);
+      wind_exit_dispatch_tracker->PushSchedSwitch(
+          currentCpuId, time, tid, tid_pid_map[tid], DEFAULT_INT_PRIORITY);
+
+    } else if (event.getId() == 101) {  // EVENT_INT_EXIT
+      ProcessContext procCtx = prevContextOnCpu[currentCpuId];
+      currentContextOnCpu[currentCpuId] = procCtx;
+
+      WindExitDispatchTracker* wind_exit_dispatch_tracker =
+          WindExitDispatchTracker::GetOrCreate(ctx_);
+      wind_exit_dispatch_tracker->PushSchedSwitch(
+          currentCpuId, time, procCtx.tid, tid_pid_map[procCtx.tid],
+          procCtx.priority);
 
     } else if (event.getId() == 52) {  // EVENT_WIND_EXIT_DISPATCH
 
@@ -239,6 +257,8 @@ base::Status WvrParser::Parse(TraceBlobView blob) {
           priority = reader.readUINT(param);
         }
       }
+      ProcessContext procCtx = {tid, priority};
+      currentContextOnCpu[currentCpuId] = procCtx;
 
       WindExitDispatchTracker* wind_exit_dispatch_tracker =
           WindExitDispatchTracker::GetOrCreate(ctx_);
