@@ -55,6 +55,10 @@ uint32_t revisionId = 0;
 std::map<uint64_t, Event> module_map;
 std::map<uint64_t, uint64_t> tid_pid_map;
 
+std::map<string, uint64_t>
+    findedInterruptOnCpu;  // key is int_num/core_num, value is int_num
+std::map<uint64_t, uint64_t> currentContextOnCpu;
+
 vector<uint8_t> cache;
 
 int16_t currentCpuId = 0;
@@ -65,6 +69,8 @@ int32_t timestampFreq = 0;
 uint32_t timestampPeriod = 0;
 int32_t autoRollover = 0;
 int32_t clkRate = 0;
+
+uint64_t time = 0;
 
 base::Status WvrParser::Parse(TraceBlobView blob) {
   // const char* src = reinterpret_cast<const char*>(blob.data());
@@ -136,6 +142,10 @@ base::Status WvrParser::Parse(TraceBlobView blob) {
       }
 
       m_prevTicks = ticks;
+
+      time = (static_cast<double>(lastTimeStamp) /
+              static_cast<double>(timestampFreq)) *
+             1000 * 1000;
     }
 
     if (event.getId() == 20) {  // EVENT_MODULE_MAP
@@ -173,6 +183,49 @@ base::Status WvrParser::Parse(TraceBlobView blob) {
           currentCpuId = reader.readUINT(param);
         }
       }
+
+    } else if (event.getId() == 102) {  // EVENT_INT_ENT_
+      uint64_t intNum = 0;
+
+      for (auto param : event.getParams()) {
+        vector<uint8_t> payload = param.getPayload();
+        if (param.getName() == "intNum") {
+          intNum = reader.readUINT(param);
+        }
+      }
+
+      string currentIntOnCpu =
+          to_string(intNum) + "/" + to_string(currentCpuId);
+
+      // tid use (coreNum + 80000), pid use (intNum + 90000).
+      uint64_t rtpId = intNum + 80000;
+      uint64_t tid = currentCpuId + 90000;
+      tid_pid_map[tid] = rtpId;
+
+      if (findedInterruptOnCpu.find(currentIntOnCpu) ==
+          findedInterruptOnCpu.end()) {
+        string intName = "Interrupt-" + to_string(intNum);
+        ctx_->process_tracker->SetProcessNameIfUnset(
+            ctx_->process_tracker->GetOrCreateProcess(rtpId),
+            ctx_->storage->InternString(intName));
+
+        auto utid = ctx_->process_tracker->UpdateThread(tid, rtpId);
+
+        StringId name_id = ctx_->storage->InternString(currentIntOnCpu);
+        ctx_->process_tracker->UpdateThreadNameByUtid(
+            utid, name_id, ThreadNamePriority::kOther);
+
+        cout << "set processName for int:" << intName << " taskName:" << currentIntOnCpu << std::endl;
+      }
+
+      findedInterruptOnCpu[currentIntOnCpu] = intNum;
+      currentContextOnCpu[currentCpuId] = intNum;
+
+      WindExitDispatchTracker* wind_exit_dispatch_tracker =
+          WindExitDispatchTracker::GetOrCreate(ctx_);
+      wind_exit_dispatch_tracker->PushSchedSwitch(currentCpuId, time, tid,
+                                                  tid_pid_map[tid], 99);
+
     } else if (event.getId() == 52) {  // EVENT_WIND_EXIT_DISPATCH
 
       uint64_t tid = 0;
@@ -186,9 +239,6 @@ base::Status WvrParser::Parse(TraceBlobView blob) {
           priority = reader.readUINT(param);
         }
       }
-      uint64_t time = (static_cast<double>(lastTimeStamp) /
-                       static_cast<double>(timestampFreq)) *
-                      1000 * 1000;
 
       WindExitDispatchTracker* wind_exit_dispatch_tracker =
           WindExitDispatchTracker::GetOrCreate(ctx_);
