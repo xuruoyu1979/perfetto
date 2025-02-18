@@ -191,61 +191,61 @@ base::Status WvrParser::Parse(TraceBlobView blob) {
       }
 
     } else if (event.getId() == 102) {  // EVENT_INT_ENT_
-      uint64_t intNum = 0;
-
-      for (auto param : event.getParams()) {
-        vector<uint8_t> payload = param.getPayload();
-        if (param.getName() == "intNum") {
-          intNum = reader.readUINT(param);
+      if (currentContextOnCpu.find(currentCpuId) != currentContextOnCpu.end()) {
+        uint64_t intNum = 0;
+        for (auto param : event.getParams()) {
+          vector<uint8_t> payload = param.getPayload();
+          if (param.getName() == "intNum") {
+            intNum = reader.readUINT(param);
+          }
         }
+
+        string currentIntOnCpu =
+            to_string(intNum) + "/" + to_string(currentCpuId);
+
+        // tid use (coreNum + 80000), pid use (intNum + 90000).
+        uint64_t rtpId = intNum + 80000;
+        uint64_t tid = currentCpuId + 90000;
+        tid_pid_map[tid] = rtpId;
+
+        if (findedInterruptOnCpu.find(currentIntOnCpu) ==
+            findedInterruptOnCpu.end()) {
+          string intName = "Interrupt-" + to_string(intNum);
+          ctx_->process_tracker->SetProcessNameIfUnset(
+              ctx_->process_tracker->GetOrCreateProcess(rtpId),
+              ctx_->storage->InternString(intName));
+
+          auto utid = ctx_->process_tracker->UpdateThread(tid, rtpId);
+
+          StringId name_id = ctx_->storage->InternString(currentIntOnCpu);
+          ctx_->process_tracker->UpdateThreadNameByUtid(
+              utid, name_id, ThreadNamePriority::kOther);
+        }
+
+        prevContextOnCpu[currentCpuId] = currentContextOnCpu[currentCpuId];
+
+        findedInterruptOnCpu[currentIntOnCpu] = intNum;
+
+        ProcessContext procCtx = {intNum, DEFAULT_INT_PRIORITY};
+        currentContextOnCpu[currentCpuId] = procCtx;
+
+        WindExitDispatchTracker* wind_exit_dispatch_tracker =
+            WindExitDispatchTracker::GetOrCreate(ctx_);
+        wind_exit_dispatch_tracker->PushSchedSwitch(
+            currentCpuId, time, tid, tid_pid_map[tid], DEFAULT_INT_PRIORITY);
       }
-
-      string currentIntOnCpu =
-          to_string(intNum) + "/" + to_string(currentCpuId);
-
-      // tid use (coreNum + 80000), pid use (intNum + 90000).
-      uint64_t rtpId = intNum + 80000;
-      uint64_t tid = currentCpuId + 90000;
-      tid_pid_map[tid] = rtpId;
-
-      if (findedInterruptOnCpu.find(currentIntOnCpu) ==
-          findedInterruptOnCpu.end()) {
-        string intName = "Interrupt-" + to_string(intNum);
-        ctx_->process_tracker->SetProcessNameIfUnset(
-            ctx_->process_tracker->GetOrCreateProcess(rtpId),
-            ctx_->storage->InternString(intName));
-
-        auto utid = ctx_->process_tracker->UpdateThread(tid, rtpId);
-
-        StringId name_id = ctx_->storage->InternString(currentIntOnCpu);
-        ctx_->process_tracker->UpdateThreadNameByUtid(
-            utid, name_id, ThreadNamePriority::kOther);
-      }
-
-      prevContextOnCpu[currentCpuId] = currentContextOnCpu[currentCpuId];
-
-      findedInterruptOnCpu[currentIntOnCpu] = intNum;
-
-      ProcessContext procCtx = {intNum, DEFAULT_INT_PRIORITY};
-      currentContextOnCpu[currentCpuId] = procCtx;
-
-      WindExitDispatchTracker* wind_exit_dispatch_tracker =
-          WindExitDispatchTracker::GetOrCreate(ctx_);
-      wind_exit_dispatch_tracker->PushSchedSwitch(
-          currentCpuId, time, tid, tid_pid_map[tid], DEFAULT_INT_PRIORITY);
-
     } else if (event.getId() == 101) {  // EVENT_INT_EXIT
-      ProcessContext procCtx = prevContextOnCpu[currentCpuId];
-      currentContextOnCpu[currentCpuId] = procCtx;
+      if (prevContextOnCpu.find(currentCpuId) != prevContextOnCpu.end()) {
+        ProcessContext procCtx = prevContextOnCpu[currentCpuId];
+        currentContextOnCpu[currentCpuId] = procCtx;
 
-      WindExitDispatchTracker* wind_exit_dispatch_tracker =
-          WindExitDispatchTracker::GetOrCreate(ctx_);
-      wind_exit_dispatch_tracker->PushSchedSwitch(
-          currentCpuId, time, procCtx.tid, tid_pid_map[procCtx.tid],
-          procCtx.priority);
-
+        WindExitDispatchTracker* wind_exit_dispatch_tracker =
+            WindExitDispatchTracker::GetOrCreate(ctx_);
+        wind_exit_dispatch_tracker->PushSchedSwitch(
+            currentCpuId, time, procCtx.tid, tid_pid_map[procCtx.tid],
+            procCtx.priority);
+      }
     } else if (event.getId() == 52) {  // EVENT_WIND_EXIT_DISPATCH
-
       uint64_t tid = 0;
       uint64_t priority = 0;
 
@@ -264,7 +264,6 @@ base::Status WvrParser::Parse(TraceBlobView blob) {
           WindExitDispatchTracker::GetOrCreate(ctx_);
       wind_exit_dispatch_tracker->PushSchedSwitch(currentCpuId, time, tid,
                                                   tid_pid_map[tid], priority);
-
     } else if (event.getId() == 3) {  // EVENT_TASKNAME
       uint64_t taskId = 0;
       uint64_t rtpId = 0;
