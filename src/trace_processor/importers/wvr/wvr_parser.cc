@@ -154,18 +154,17 @@ base::Status WvrParser::Parse(TraceBlobView blob) {
              1000 * 1000;
     }
 
-    if (event.getId() == 20) {  // EVENT_MODULE_MAP
+    if (event.getId() == 16) {  // EVENT_RTPNAME
       uint64_t rtpId = 0;
       string name = "";
       for (auto param : event.getParams()) {
         vector<uint8_t> payload = param.getPayload();
-        if (param.getName() == "fileName") {
+        if (param.getName() == "name") {
           name = reader.toPrintableString(payload);
-        } else if (param.getName() == "RtpId") {
+        } else if (param.getName() == "rtpId") {
           rtpId = reader.readUINT(param);
         }
       }
-      // std::cout << "Set RTP Name=" << name << " id=" << rtpId << std::endl;
       ctx_->process_tracker->SetProcessNameIfUnset(
           ctx_->process_tracker->GetOrCreateProcess(rtpId),
           ctx_->storage->InternString(name));
@@ -220,14 +219,15 @@ base::Status WvrParser::Parse(TraceBlobView blob) {
           StringId name_id = ctx_->storage->InternString(currentIntOnCpu);
           ctx_->process_tracker->UpdateThreadNameByUtid(
               utid, name_id, ThreadNamePriority::kOther);
-        }else{ // same intNum enter again before int exit.
+        } else {  // same intNum enter again before int exit.
 
-          //in case we must have prevContext.size > 0
+          // in case we must have prevContext.size > 0
           vector<ProcessContext> prevCtxStack = prevContextOnCpu[currentCpuId];
           tid = currentCpuId + 90000 + prevCtxStack.size() * 1000;
           auto utid = ctx_->process_tracker->UpdateThread(tid, rtpId);
 
-          StringId name_id = ctx_->storage->InternString(currentIntOnCpu + ":" + to_string(prevCtxStack.size()));
+          StringId name_id = ctx_->storage->InternString(
+              currentIntOnCpu + ":" + to_string(prevCtxStack.size()));
           ctx_->process_tracker->UpdateThreadNameByUtid(
               utid, name_id, ThreadNamePriority::kOther);
         }
@@ -300,6 +300,7 @@ base::Status WvrParser::Parse(TraceBlobView blob) {
         }
       }
       tid_pid_map[taskId] = rtpId;
+
       ctx_->process_tracker->GetOrCreateProcess(rtpId);
       auto utid = ctx_->process_tracker->UpdateThread(taskId, rtpId);
 
