@@ -59,7 +59,7 @@ std::map<string, uint64_t>
     findedInterruptOnCpu;  // key is int_num/core_num, value is int_num
 std::map<uint64_t, ProcessContext> currentContextOnCpu;
 
-std::map<uint64_t, ProcessContext>
+std::map<uint64_t, vector<ProcessContext>>
     prevContextOnCpu;  // store the prev context when interrupted, will schedule
                        // to it when int exit.
 
@@ -220,9 +220,21 @@ base::Status WvrParser::Parse(TraceBlobView blob) {
           StringId name_id = ctx_->storage->InternString(currentIntOnCpu);
           ctx_->process_tracker->UpdateThreadNameByUtid(
               utid, name_id, ThreadNamePriority::kOther);
+        }else{ // same intNum enter again before int exit.
+
+          //in case we must have prevContext.size > 0
+          vector<ProcessContext> prevCtxStack = prevContextOnCpu[currentCpuId];
+          tid = currentCpuId + 90000 + prevCtxStack.size() * 1000;
+          auto utid = ctx_->process_tracker->UpdateThread(tid, rtpId);
+
+          StringId name_id = ctx_->storage->InternString(currentIntOnCpu + ":" + to_string(prevCtxStack.size()));
+          ctx_->process_tracker->UpdateThreadNameByUtid(
+              utid, name_id, ThreadNamePriority::kOther);
         }
 
-        prevContextOnCpu[currentCpuId] = currentContextOnCpu[currentCpuId];
+        vector<ProcessContext> prevCtxStack = prevContextOnCpu[currentCpuId];
+
+        prevCtxStack.push_back(currentContextOnCpu[currentCpuId]);
 
         findedInterruptOnCpu[currentIntOnCpu] = intNum;
 
@@ -236,14 +248,19 @@ base::Status WvrParser::Parse(TraceBlobView blob) {
       }
     } else if (event.getId() == 101) {  // EVENT_INT_EXIT
       if (prevContextOnCpu.find(currentCpuId) != prevContextOnCpu.end()) {
-        ProcessContext procCtx = prevContextOnCpu[currentCpuId];
-        currentContextOnCpu[currentCpuId] = procCtx;
+        vector<ProcessContext> procCtxStack = prevContextOnCpu[currentCpuId];
+        if (!procCtxStack.empty()) {
+          ProcessContext procCtx = procCtxStack.back();
+          currentContextOnCpu[currentCpuId] = procCtx;
 
-        WindExitDispatchTracker* wind_exit_dispatch_tracker =
-            WindExitDispatchTracker::GetOrCreate(ctx_);
-        wind_exit_dispatch_tracker->PushSchedSwitch(
-            currentCpuId, time, procCtx.tid, tid_pid_map[procCtx.tid],
-            procCtx.priority);
+          WindExitDispatchTracker* wind_exit_dispatch_tracker =
+              WindExitDispatchTracker::GetOrCreate(ctx_);
+          wind_exit_dispatch_tracker->PushSchedSwitch(
+              currentCpuId, time, procCtx.tid, tid_pid_map[procCtx.tid],
+              procCtx.priority);
+
+          procCtxStack.pop_back();
+        }
       }
     } else if (event.getId() == 52) {  // EVENT_WIND_EXIT_DISPATCH
       uint64_t tid = 0;
