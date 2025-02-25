@@ -1,4 +1,5 @@
 #include "src/trace_processor/importers/wvr/wind_exit_dispatch_event_tracker.h"
+#include "src/trace_processor/importers/wvr/wind_state_event_tracker.h"
 
 #include <cstddef>
 #include <cstdint>
@@ -32,6 +33,7 @@ WindExitDispatchTracker::~WindExitDispatchTracker() = default;
 
 void WindExitDispatchTracker::PushSchedSwitch(uint32_t cpu,
                                               int64_t ts,
+                                              int64_t prev_state,
                                               uint32_t next_tid,
                                               uint32_t next_pid,
                                               int32_t next_prio) {
@@ -54,11 +56,15 @@ void WindExitDispatchTracker::PushSchedSwitch(uint32_t cpu,
     return;
   }
 
+  WindStateEventTracker* wind_state_tracker =
+      WindStateEventTracker::GetOrCreate(context_);
   // Close the pending slice if any (we won't have one when processing the first
   // two compact events for a given cpu).
   uint32_t pending_slice_idx = pending_sched->pending_slice_storage_idx;
 
-  StringId prev_state_str_id = StringId::Raw(0);
+  StringId prev_state_str_id = wind_state_tracker->TaskStateToStringId(prev_state);
+  
+//   prev_state_str_id = StringId::Raw(0);
 
   if (pending_slice_idx != std::numeric_limits<uint32_t>::max()) {
     context_->sched_event_tracker->ClosePendingSlice(pending_slice_idx, ts,
@@ -72,7 +78,7 @@ void WindExitDispatchTracker::PushSchedSwitch(uint32_t cpu,
 
   // Do a fresh task name lookup in case it was updated by a task_rename while
   // scheduled.
-  context_->storage->thread_table()[prev_utid].name().value_or(kNullStringId);
+  context_->storage->thread_table()[prev_utid].name().value_or(prev_state_str_id);
 
   // Update the info for the next sched switch on this CPU.
   pending_sched->last_pid = next_pid;

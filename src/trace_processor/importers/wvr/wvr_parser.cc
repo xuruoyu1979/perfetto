@@ -16,6 +16,7 @@
 
 #include "src/trace_processor/importers/wvr/wvr_parser.h"
 #include "src/trace_processor/importers/wvr/wind_exit_dispatch_event_tracker.h"
+#include "src/trace_processor/importers/wvr/wind_state_event_tracker.h"
 #include "src/trace_processor/importers/wvr/wvrLib.h"
 
 #include <algorithm>
@@ -243,8 +244,9 @@ base::Status WvrParser::Parse(TraceBlobView blob) {
 
         WindExitDispatchTracker* wind_exit_dispatch_tracker =
             WindExitDispatchTracker::GetOrCreate(ctx_);
-        wind_exit_dispatch_tracker->PushSchedSwitch(
-            currentCpuId, time, tid, tid_pid_map[tid], DEFAULT_INT_PRIORITY);
+        wind_exit_dispatch_tracker->PushSchedSwitch(currentCpuId, time, INIT,
+                                                    tid, tid_pid_map[tid],
+                                                    DEFAULT_INT_PRIORITY);
       }
     } else if (event.getId() == 101) {  // EVENT_INT_EXIT
       if (prevContextOnCpu.find(currentCpuId) != prevContextOnCpu.end()) {
@@ -256,8 +258,8 @@ base::Status WvrParser::Parse(TraceBlobView blob) {
           WindExitDispatchTracker* wind_exit_dispatch_tracker =
               WindExitDispatchTracker::GetOrCreate(ctx_);
           wind_exit_dispatch_tracker->PushSchedSwitch(
-              currentCpuId, time, procCtx.tid, tid_pid_map[procCtx.tid],
-              procCtx.priority);
+              currentCpuId, time, INIT, procCtx.tid,
+              tid_pid_map[procCtx.tid], procCtx.priority);
 
           procCtxStack.pop_back();
         }
@@ -279,8 +281,8 @@ base::Status WvrParser::Parse(TraceBlobView blob) {
 
       WindExitDispatchTracker* wind_exit_dispatch_tracker =
           WindExitDispatchTracker::GetOrCreate(ctx_);
-      wind_exit_dispatch_tracker->PushSchedSwitch(currentCpuId, time, tid,
-                                                  tid_pid_map[tid], priority);
+      wind_exit_dispatch_tracker->PushSchedSwitch(
+          currentCpuId, time, INIT, tid, tid_pid_map[tid], priority);
     } else if (event.getId() == 3) {  // EVENT_TASKNAME
       uint64_t taskId = 0;
       uint64_t rtpId = 0;

@@ -26,7 +26,8 @@
 //   //
 //   int newTaskId = event.data[0];
 
-//   m_pParser->stateChangeEventWrite(WIND_PEND | WIND_STATE_UNKNOWN, 0, newTaskId,
+//   m_pParser->stateChangeEventWrite(WIND_PEND | WIND_STATE_UNKNOWN, 0,
+//   newTaskId,
 //                                    event.timeStamp);
 
 //   break;
@@ -89,7 +90,8 @@
 //   // the query mechanism figure out its state, and stash it
 //   // on the event stack so it will get time stamped when the
 //   // WINDEXIT occurs.
-//   m_pParser->stateChangeEventWrite(WIND_SUSPEND, 0, newTaskId, event.timeStamp);
+//   m_pParser->stateChangeEventWrite(WIND_SUSPEND, 0, newTaskId,
+//   event.timeStamp);
 
 //   break;
 // }
@@ -114,7 +116,8 @@
 //   // the query mechanism figure out its state, and stash it
 //   // on the event stack so it will get time stamped when the
 //   // WINDEXIT occurs.
-//   m_pParser->stateChangeEventWrite(WIND_BREAK, 0, newTaskId, event.timeStamp);
+//   m_pParser->stateChangeEventWrite(WIND_BREAK, 0, newTaskId,
+//   event.timeStamp);
 
 //   break;
 // }
@@ -152,3 +155,61 @@
 
 //   break;
 // }
+
+#ifndef SRC_TRACE_PROCESSOR_IMPORTERS_WVR_WIND_STATE_EVENT_TRACKER_H_
+#define SRC_TRACE_PROCESSOR_IMPORTERS_WVR_WIND_STATE_EVENT_TRACKER_H_
+
+#include <cstdint>
+
+#include <array>
+
+#include "perfetto/ext/base/string_view.h"
+#include "src/trace_processor/importers/common/sched_event_state.h"
+#include "src/trace_processor/storage/trace_storage.h"
+#include "src/trace_processor/types/destructible.h"
+#include "src/trace_processor/types/trace_processor_context.h"
+
+namespace perfetto {
+namespace trace_processor {
+
+enum WIND_STATE_TYPE {
+  INIT = 0x00,
+  READY,
+  RUNNING,
+  PEND,
+  SUSPEND,
+  DEAD,
+  INHERITED,
+  BREAK,
+  DELAY,
+};
+
+class EventTracker;
+
+// Tracks sched events and stores them into the storage as sched slices.
+class WindStateEventTracker : public Destructible {
+ public:
+  explicit WindStateEventTracker(TraceProcessorContext*);
+  ~WindStateEventTracker() override;
+
+  StringId TaskStateToStringId(int64_t task_state_int);
+
+  WindStateEventTracker(const WindStateEventTracker&) = delete;
+  WindStateEventTracker& operator=(const WindStateEventTracker&) = delete;
+
+  static WindStateEventTracker* GetOrCreate(TraceProcessorContext* context) {
+    if (!context->wind_state_tracker) {
+      context->wind_state_tracker.reset(new WindStateEventTracker(context));
+    }
+    return static_cast<WindStateEventTracker*>(
+        context->wind_state_tracker.get());
+  }
+
+ private:
+  TraceProcessorContext* const context_;
+};
+
+}  // namespace trace_processor
+}  // namespace perfetto
+
+#endif  // SRC_TRACE_PROCESSOR_IMPORTERS_WVR_WIND_STATE_EVENT_TRACKER_H_

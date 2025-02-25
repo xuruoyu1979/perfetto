@@ -169,6 +169,7 @@ class TraceProcessorContext {
   std::unique_ptr<Destructible> elf_tracker;                            // ElfTracker
   std::unique_ptr<Destructible> file_tracker;                           // FileTracker
   std::unique_ptr<Destructible> wind_exit_dispatch_tracker;                   // WindExitDispatchTracker
+  std::unique_ptr<Destructible> wind_state_tracker;                   // WindStateTracker
   // clang-format on
 
   std::unique_ptr<ProtoTraceParser> proto_trace_parser;

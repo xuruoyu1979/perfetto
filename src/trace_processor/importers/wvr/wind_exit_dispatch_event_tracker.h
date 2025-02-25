@@ -38,6 +38,7 @@ class WindExitDispatchTracker : public Destructible {
   // Virtual for testing.
   virtual void PushSchedSwitch(uint32_t cpu,
                                int64_t ts,
+                               int64_t prev_state,
                                uint32_t next_tid,
                                uint32_t next_pid,
                                int32_t next_prio);
